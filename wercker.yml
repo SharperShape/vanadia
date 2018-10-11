@@ -1,0 +1,33 @@
+box: ubuntu
+
+build:
+  steps:
+    - script:
+      name: Build
+      code: make
+
+package:
+  box:
+    id: quay.io/sharpershape/package-fpm
+    registry: quay.io
+  steps:
+  - script:
+    name: Package
+    code: |
+      version_prefix="1.0.0"
+      version_suffix=`date +%Y%m%d%H%M%S`
+      version="${version_prefix}+${version_suffix}"
+      echo "Create package: ${version}"
+      ./bin/package.sh $version $WERCKER_SOURCE_DIR/package $WERCKER_OUTPUT_DIR/vanadia.deb
+  - script:
+    name: Copy scripts for next steps
+    code: cp -r ./bin $WERCKER_OUTPUT_DIR/
+
+release:
+  steps:
+#  - script:
+#    name: Setup
+#    code: apt-get update && apt-get install -y curl
+  - script:
+    name: Release deb -package
+    code: curl -F package=@$WERCKER_SOURCE_DIR/vanadia.deb https://${GEMFURY_TOKEN}@push.fury.io/sharpershape/
